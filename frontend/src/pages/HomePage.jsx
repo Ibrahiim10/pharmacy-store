@@ -1,0 +1,641 @@
+import { useMemo, useRef, useState } from "react"
+import { useQuery } from "@tanstack/react-query"
+import { useNavigate } from "react-router"
+
+import heroImage from "@/assets/images/hro.png"
+import rxImage from "@/assets/images/hero.png"
+import RxImage from "@/assets/images/accurate.jpeg"
+
+import {
+    Truck,
+    Headphones,
+    ShieldCheck,
+    ShoppingCart,
+    Upload,
+    Search,
+} from "lucide-react"
+
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card"
+
+import { fetchProducts } from "@/lib/api/products"
+import useCartStore from "@/lib/store/cartStore"
+import { Toaster } from "@/components/ui/sonner"
+import { toast } from "sonner"
+import Footer from "./footer"
+
+export default function HomePage() {
+    const navigate = useNavigate()
+    const productsRef = useRef(null)
+
+    // server search
+    const [q, setQ] = useState("")
+    // UI category filter
+    const [activeTab, setActiveTab] = useState("All")
+
+    const addItem = useCartStore((s) => s.addItem)
+
+    const { data: products = [], isLoading, isError } = useQuery({
+        queryKey: ["products", q],
+        queryFn: () => fetchProducts(q ? { q } : {}),
+        // ✅ IMPORTANT: normalize response so `products` is ALWAYS an array
+        select: (res) => {
+            if (Array.isArray(res)) return res
+            if (Array.isArray(res?.products)) return res.products
+            if (Array.isArray(res?.data)) return res.data
+            if (Array.isArray(res?.items)) return res.items
+            return []
+        },
+        refetchOnWindowFocus: false,
+    })
+
+    // Tabs like the design screenshot
+    const tabs = useMemo(() => ["All", "Pain Relief", "Vitamins", "Prescription"], [])
+
+    // ✅ Always filter from an array
+    const filteredProducts = useMemo(() => {
+        const list = Array.isArray(products) ? products : []
+
+        if (activeTab === "All") return list
+
+        if (activeTab === "Prescription") {
+            return list.filter((p) => p?.prescriptionRequired)
+        }
+
+        return list.filter((p) =>
+            String(p?.category || "")
+                .toLowerCase()
+                .includes(activeTab.toLowerCase())
+        )
+    }, [products, activeTab])
+
+    const featuredProducts = useMemo(() => {
+        const list = Array.isArray(filteredProducts) ? filteredProducts : []
+        return list.slice(0, 4)
+    }, [filteredProducts])
+
+    const handleShopNow = () => {
+        productsRef.current?.scrollIntoView({ behavior: "smooth" })
+    }
+
+    return (
+        <div className="w-full">
+            {/* HERO */}
+            <section className="relative min-h-[70vh] md:min-h-[80vh] flex items-center overflow-hidden">
+                <img
+                    src={heroImage}
+                    alt="Delivery & Pharmacy Products"
+                    className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/55 to-black/30" />
+                <div className="relative z-10 max-w-6xl mx-auto px-4 py-16">
+                    <div className="grid gap-8 md:grid-cols-2 md:items-center">
+                        {/* Left */}
+                        <div className="space-y-4">
+                            <h1 className="text-white text-3xl md:text-5xl font-bold leading-tight">
+                                Your Health, Delivered <br className="hidden md:block" />
+                                to Your Doorstep
+                            </h1>
+                            <p className="text-gray-50 md:text-lg">
+                                Order medicines & healthcare products online. Fast delivery, secure
+                                checkout, and pharmacist support.
+                            </p>
+
+                            <div className="flex flex-col sm:flex-row gap-3 pt-8">
+                                <Button className="gap-2" onClick={handleShopNow}>
+                                    <ShoppingCart className="w-4 h-4" />
+                                    Shop Now
+                                </Button>
+
+                                <Button
+                                    variant="secondary"
+                                    className="gap-2"
+                                    onClick={() => navigate("/orders")}
+                                >
+                                    <Upload className="w-4 h-4" onClick={() => navigate("/upload-prescription")} />
+                                    Upload Prescription
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Right image */}
+                        <div className="relative">
+                            <div className="aspect-[16/10] rounded-xl border bg-muted overflow-hidden shadow-md flex items-center justify-center">
+                                <img
+                                    src={rxImage}
+                                    alt="Delivery & Pharmacy Products"
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+
+            </section>
+
+
+            {/* Feature strip */}
+            <section className="relative -mt-10 z-20">
+                <div className="max-w-6xl mx-auto px-4">
+                    <div className="grid gap-4 md:grid-cols-3 rounded-2xl border bg-background/70 backdrop-blur-lg shadow-sm p-5">
+
+                        {/* Feature 1 */}
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
+                                <Truck className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <div className="font-semibold leading-tight">Fast Delivery</div>
+                                <div className="text-sm text-muted-foreground">
+                                    Get medicines quickly
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Feature 2 */}
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sky-500/10 text-sky-600">
+                                <Headphones className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <div className="font-semibold leading-tight">24/7 Support</div>
+                                <div className="text-sm text-muted-foreground">
+                                    Always here to help
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Feature 3 */}
+                        <div className="flex items-center gap-4">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-violet-500/10 text-violet-600">
+                                <ShieldCheck className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <div className="font-semibold leading-tight">Secure Payment</div>
+                                <div className="text-sm text-muted-foreground">
+                                    Safe & reliable checkout
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+
+            {/* FEATURED PRODUCTS */}
+            <section ref={productsRef} className="max-w-6xl mx-auto px-4 py-10">
+                <div className="flex justify-center text-center mb-4">
+                    <div className="space-y-1">
+                        <h2 className="text-2xl md:text-3xl font-bold">
+                            Featured Products
+                        </h2>
+                        <p className="text-sm md:text-base text-muted-foreground">
+                            Top picks for you — add to cart in one click.
+                        </p>
+                    </div>
+                </div>
+
+
+                {/* Loading / Error */}
+                <div className="mt-5">
+                    {isLoading && <p>Loading products...</p>}
+                    {isError && <p className="text-destructive">Failed to load products.</p>}
+                </div>
+
+                {/* Featured grid */}
+                {!isLoading && !isError && (
+                    <div className="grid gap-4 mt-4 sm:grid-cols-2 lg:grid-cols-4">
+                        {featuredProducts.map((p) => {
+                            const outOfStock = Number(p?.countInStock ?? 0) <= 0
+
+                            return (
+                                <Card key={p._id} className="w-full overflow-hidden">
+                                    <div className="w-full h-60 overflow-hidden bg-muted">
+                                        {p?.image ? (
+                                            <img
+                                                src={p.image}
+                                                alt={p.name}
+                                                className="w-full h-full object-cover"
+                                                loading="lazy"
+                                            />
+                                        ) : (
+                                            <div className="flex h-full items-center justify-center">
+                                                <span className="text-xs text-muted-foreground">No image</span>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <CardHeader>
+                                        <CardTitle className="text-base line-clamp-1">
+                                            {p?.name}
+                                        </CardTitle>
+                                        <CardDescription className="line-clamp-1">
+                                            {p?.category}
+                                        </CardDescription>
+                                    </CardHeader>
+
+                                    <CardContent className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <div className="font-semibold">KES {p?.price}</div>
+
+                                            {p?.prescriptionRequired && (
+                                                <span className="text-xs px-2 py-1 rounded bg-secondary border">
+                                                    Prescription
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        <Button
+                                            className="w-full"
+                                            disabled={outOfStock}
+                                            onClick={() => {
+                                                addItem({
+                                                    productId: p._id,
+                                                    name: p.name,
+                                                    price: p.price,
+                                                    countInStock: p.countInStock,
+                                                })
+
+                                                toast.success("Added to cart", {
+                                                    description: `${p.name} has been added to your cart.`,
+                                                })
+                                            }}
+                                        >
+                                            {outOfStock ? "Out of stock" : "Add to Cart"}
+                                        </Button>
+
+                                    </CardContent>
+                                </Card>
+
+                            )
+                        })}
+                    </div>
+                )}
+
+                {!isLoading && !isError && featuredProducts.length === 0 && (
+                    <p className="text-muted-foreground mt-4">No featured products.</p>
+                )}
+            </section>
+
+            {/* SEARCH + TABS */}
+            <section className="max-w-6xl mx-auto px-4 pb-10">
+                <div className="flex items-center gap-2 rounded-xl border bg-background p-3">
+                    <Search className="w-4 h-4 text-muted-foreground" />
+                    <Input
+                        value={q}
+                        onChange={(e) => setQ(e.target.value)}
+                        placeholder="Search medicines..."
+                        className="border-0 shadow-none focus-visible:ring-0"
+                    />
+                </div>
+
+                <div className="flex flex-wrap gap-2 mt-4">
+                    {tabs.map((tab) => (
+                        <Button
+                            key={tab}
+                            variant={activeTab === tab ? "default" : "outline"}
+                            onClick={() => setActiveTab(tab)}
+                        >
+                            {tab}
+                        </Button>
+                    ))}
+                </div>
+
+                {/* Product grid (Pro) */}
+                <div className="mt-8">
+                    {/* Empty state */}
+                    {!isLoading && !isError && filteredProducts.length === 0 && (
+                        <div className="rounded-2xl border bg-background p-10 text-center">
+                            <div className="mx-auto mb-2 h-10 w-10 rounded-full bg-muted" />
+                            <p className="font-semibold">No products found</p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Try a different keyword or switch a category tab.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Grid */}
+                    {!isLoading && !isError && filteredProducts.length > 0 && (
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {filteredProducts.map((p) => {
+                                const outOfStock = Number(p?.countInStock ?? 0) <= 0
+
+                                return (
+                                    <Card
+                                        key={p._id}
+                                        className="group overflow-hidden rounded-2xl border bg-background transition hover:shadow-md"
+                                    >
+                                        {/* Image */}
+                                        <div className="relative h-56 w-full overflow-hidden bg-muted">
+                                            {p?.image ? (
+                                                <img
+                                                    src={p.image}
+                                                    alt={p.name}
+                                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                                                    loading="lazy"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full w-full items-center justify-center">
+                                                    <span className="text-xs text-muted-foreground">No image</span>
+                                                </div>
+                                            )}
+
+                                            {/* Badges */}
+                                            <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+                                                {p?.prescriptionRequired && (
+                                                    <span className="rounded-full border bg-background/85 px-2.5 py-1 text-[11px] backdrop-blur">
+                                                        Prescription
+                                                    </span>
+                                                )}
+                                                {outOfStock && (
+                                                    <span className="rounded-full border border-destructive/20 bg-destructive/10 px-2.5 py-1 text-[11px] text-destructive">
+                                                        Out of stock
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            {/* Subtle bottom fade */}
+                                            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-background/60 to-transparent" />
+                                        </div>
+
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-lg leading-tight line-clamp-1">
+                                                {p?.name}
+                                            </CardTitle>
+                                            <CardDescription className="line-clamp-1">
+                                                {p?.category || "General"}
+                                            </CardDescription>
+                                        </CardHeader>
+
+                                        <CardContent className="space-y-4">
+                                            {/* Description */}
+                                            {p?.description ? (
+                                                <p className="text-sm text-muted-foreground line-clamp-2">
+                                                    {p.description}
+                                                </p>
+                                            ) : (
+                                                <p className="text-sm text-muted-foreground">
+                                                    No description available.
+                                                </p>
+                                            )}
+
+                                            {/* Price + Stock row */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="text-base font-semibold">
+                                                    KES {p?.price}
+                                                </div>
+                                                <div className="text-xs text-muted-foreground">
+                                                    Stock:{" "}
+                                                    <span className="font-medium">
+                                                        {Number(p?.countInStock ?? 0)}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* CTA */}
+                                            <Button
+                                                className="w-full"
+                                                disabled={outOfStock}
+                                                onClick={() => {
+                                                    addItem({
+                                                        productId: p._id,
+                                                        name: p.name,
+                                                        price: p.price,
+                                                        countInStock: p.countInStock,
+                                                    })
+
+                                                    toast.success("Added to cart", {
+                                                        description: `${p.name} has been added to your cart.`,
+                                                    })
+                                                }}
+                                            >
+                                                {outOfStock ? "Out of stock" : "Add to Cart"}
+                                            </Button>
+                                        </CardContent>
+                                    </Card>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+
+            </section>
+
+            {/* PROMO SECTION */}
+            <section className="max-w-6xl mx-auto px-4 pb-16">
+                <div className="grid gap-4 md:grid-cols-2">
+                    {/* Card 1: Deals */}
+                    <Card className="group overflow-hidden rounded-2xl border bg-background hover:shadow-md transition">
+                        <CardContent className="relative p-6 md:p-7">
+                            {/* Soft gradient accent */}
+                            <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
+                            <div className="pointer-events-none absolute -left-24 -bottom-24 h-56 w-56 rounded-full bg-sky-500/10 blur-3xl" />
+
+                            <div className="flex items-center justify-between gap-6">
+                                <div className="space-y-3">
+                                    <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
+                                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                                        Special Offers
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <h3 className="text-xl md:text-2xl font-bold tracking-tight">
+                                            Up to <span className="text-emerald-600">30% Off</span>
+                                        </h3>
+                                        <p className="text-sm md:text-base text-muted-foreground">
+                                            Save on health & wellness essentials this week.
+                                        </p>
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                                        <Button variant="secondary" onClick={handleShopNow} className="gap-2">
+                                            Shop Deals
+                                            <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                                        </Button>
+
+                                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
+                                            Limited time
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Visual */}
+                                <div className="hidden sm:block">
+                                    <div className="relative h-28 w-28 rounded-2xl border bg-muted overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 via-transparent to-sky-500/10" />
+                                        <div className="h-full w-full flex items-center justify-center text-xs text-muted-foreground">
+                                            <div className="h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36 rounded-2xl overflow-hidden border bg-muted shrink-0">
+                                                <img
+                                                    src={RxImage}
+                                                    alt="Prescription upload"
+                                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                                    loading="lazy"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Card 2: Prescription */}
+                    <Card className="group overflow-hidden rounded-2xl border bg-background hover:shadow-md transition">
+                        <CardContent className="relative p-6 md:p-7">
+                            {/* Soft gradient accent */}
+                            <div className="pointer-events-none absolute -right-24 -bottom-24 h-56 w-56 rounded-full bg-orange-500/10 blur-3xl" />
+                            <div className="pointer-events-none absolute -left-24 -top-24 h-56 w-56 rounded-full bg-orange-500/10 blur-3xl" />
+
+                            <div className="flex items-center justify-between gap-6">
+                                <div className="space-y-3">
+                                    <div className="inline-flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1 text-xs text-muted-foreground">
+                                        <span className="h-2 w-2 rounded-full bg-violet-500" />
+                                        Upload Prescription
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <h3 className="text-xl md:text-2xl font-bold tracking-tight">
+                                            Get Medicines With Ease
+                                        </h3>
+                                        <p className="text-sm md:text-base text-muted-foreground">
+                                            Upload your prescription — pharmacist reviews, then you checkout.
+                                        </p>
+                                    </div>
+
+                                    <div className="flex flex-col sm:flex-row gap-3 pt-1">
+                                        <Button onClick={() => navigate("/orders")} className="gap-2">
+                                            Upload Now
+                                            <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                                        </Button>
+
+                                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />
+                                            Fast review
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Image */}
+                                <div className="h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36 rounded-2xl overflow-hidden border bg-muted shrink-0">
+                                    <img
+                                        src={rxImage}
+                                        alt="Prescription upload"
+                                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                        loading="lazy"
+                                    />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </section>
+
+            {/* WhatsApp + M-Pesa CTA */}
+            <section className="relative overflow-hidden">
+                <div className="relative max-w-7xl mx-auto px-4 py-14 md:py-20">
+                    <Card className="group overflow-hidden rounded-2xl border bg-background hover:shadow-md transition">
+                        <CardContent className="relative p-6 md:p-7">
+                            <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-orange-500/10 blur-3xl" />
+                            <div className="pointer-events-none absolute -left-24 -bottom-24 h-56 w-56 rounded-full bg-sky-500/10 blur-3xl" />
+                            <div className="grid gap-10 md:grid-cols-2 md:items-center">
+
+                                {/* Left */}
+                                <div className="text-black space-y-4">
+                                    <span className="inline-block text-sm text-green-700 font-medium uppercase tracking-wide bg-green-100 px-3 py-1 rounded-full">
+                                        ⚡️   Fast & Secure Payments
+                                    </span>
+
+                                    <h2 className="text-3xl md:text-4xl font-bold leading-tight">
+                                        Order Easily via WhatsApp
+                                        <br className="hidden md:block" />
+                                        Pay Securely with M-Pesa
+                                    </h2>
+
+                                    <p className="max-w-xl">
+                                        Chat with us on WhatsApp to place your order, upload prescriptions,
+                                        and complete payment instantly using M-Pesa.
+                                    </p>
+
+                                    {/* CTA buttons */}
+                                    <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                                        {/* WhatsApp */}
+                                        <a
+                                            href="https://wa.me/254719583400?text=Hello%20I%20would%20like%20to%20order%20medicines"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="inline-flex items-center justify-center gap-2 rounded-md bg-green-200 text-emerald-700 px-6 py-3 text-sm font-medium hover:bg-white/90 transition"
+                                        >
+                                            💬 Order via WhatsApp
+                                        </a>
+
+                                        {/* M-Pesa */}
+                                        <Button
+                                            size="lg"
+                                            variant="secondary"
+                                            className="bg-green-200  text-gray-700 hover:bg-white/20"
+                                            onClick={() => navigate("/checkout")}
+                                        >
+                                            📲 Pay with M-Pesa
+                                        </Button>
+                                    </div>
+
+                                    {/* Trust points */}
+                                    <div className="flex flex-wrap gap-6 pt-6 text-sm  text-gray-700">
+                                        <div className="flex items-center gap-2">
+                                            🔒 Secure Payments
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            🚚 Fast Delivery
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            👨‍⚕️ Pharmacist Support
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Right: quick stats */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="rounded-2xl bg-green-50 backdrop-blur-md border border-green-200 p-6 text-black">
+                                        <div className="text-3xl font-bold">WhatsApp</div>
+                                        <div className="text-sm text-gray-700">Instant chat order</div>
+                                    </div>
+
+                                    <div className="rounded-2xl bg-green-50 backdrop-blur-md border border-green-200 p-6 text-green-500">
+                                        <div className="text-3xl font-bold">M-Pesa</div>
+                                        <div className="text-sm text-gray-700">Secure payment</div>
+                                    </div>
+
+                                    <div className="rounded-2xl bg-green-50 backdrop-blur-md border border-green-200 p-6 text-black">
+                                        <div className="text-3xl font-bold">24/7</div>
+                                        <div className="text-sm  text-gray-700">Support</div>
+                                    </div>
+
+                                    <div className="rounded-2xl bg-green-50 backdrop-blur-md border border-green-200 p-6 text-black">
+                                        <div className="text-3xl font-bold">Fast</div>
+                                        <div className="text-sm  text-gray-700">Delivery</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </section>
+
+
+            {/* footer */}
+
+            <Footer />
+
+        </div>
+    )
+}
