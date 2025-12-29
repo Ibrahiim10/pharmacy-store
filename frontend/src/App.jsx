@@ -22,6 +22,7 @@ import AdminUsersPage from "./pages/admin/AdminUsersPage"
 import AdminReportsPage from "./pages/admin/AdminReportsPage"
 import AdminSettingsPage from "./pages/admin/AdminSettingsPage"
 import AboutPage from "./pages/AboutPage"
+import ContactPage from "./pages/ContactPage"
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
         {/* Public */}
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/cart" element={<CartPage />} />
