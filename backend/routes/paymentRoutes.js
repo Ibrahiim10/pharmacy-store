@@ -9,10 +9,10 @@ import {
 
 const router = express.Router()
 
-// Admin
+// Admin list payments
 router.get("/", protect, authorize("admin", "pharmacist"), getMpesaPaymentsAdmin)
 
-// Customer initiate
+// Customer initiate STK
 router.post("/mpesa/stk/:orderId", protect, initiateMpesa)
 
 // Public callback

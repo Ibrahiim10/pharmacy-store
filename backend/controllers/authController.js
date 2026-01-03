@@ -21,7 +21,7 @@ export const registerUser = async (req, res, next) => {
       email,
       password,
       profilePic,
-      role: "customer",
+      role: "user",
     })
 
     const token = generateToken(user._id)
