@@ -13,6 +13,8 @@ import {
     ShoppingCart,
     Upload,
     Search,
+    Stethoscope,
+    Clock
 } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
@@ -27,9 +29,27 @@ import {
 
 import { fetchProducts } from "@/lib/api/products"
 import useCartStore from "@/lib/store/cartStore"
-import { Toaster } from "@/components/ui/sonner"
 import { toast } from "sonner"
 import Footer from "./footer"
+
+
+
+function Feature({ icon, title, desc }) {
+    return (
+        <Card className="group overflow-hidden rounded-2xl border bg-background transition hover:shadow-md">
+            <CardContent className="p-5 space-y-3">
+                <div className="flex items-center gap-3">
+                    <div className="h-11 w-11 rounded-xl bg-muted flex items-center justify-center">
+                        {icon}
+                    </div>
+                    <div className="font-semibold">{title}</div>
+                </div>
+                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+            </CardContent>
+        </Card>
+    )
+}
+
 
 export default function HomePage() {
     const navigate = useNavigate()
@@ -45,7 +65,6 @@ export default function HomePage() {
     const { data: products = [], isLoading, isError } = useQuery({
         queryKey: ["products", q],
         queryFn: () => fetchProducts(q ? { q } : {}),
-        // ✅ IMPORTANT: normalize response so `products` is ALWAYS an array
         select: (res) => {
             if (Array.isArray(res)) return res
             if (Array.isArray(res?.products)) return res.products
@@ -56,18 +75,12 @@ export default function HomePage() {
         refetchOnWindowFocus: false,
     })
 
-    // Tabs like the design screenshot
-    const tabs = useMemo(() => ["All", "Pain Relief", "Vitamins", "Prescription"], [])
+    const tabs = useMemo(() => ["All", "Pain Relief", "Vitamins", "Diabetes Care", "Blood Pressure"], [])
 
-    // ✅ Always filter from an array
     const filteredProducts = useMemo(() => {
         const list = Array.isArray(products) ? products : []
 
         if (activeTab === "All") return list
-
-        if (activeTab === "Prescription") {
-            return list.filter((p) => p?.prescriptionRequired)
-        }
 
         return list.filter((p) =>
             String(p?.category || "")
@@ -190,72 +203,60 @@ export default function HomePage() {
                 </div>
             </section>
 
-
             {/* FEATURED PRODUCTS */}
             <section ref={productsRef} className="max-w-6xl mx-auto px-4 py-10">
-                <div className="flex justify-center text-center mb-4">
-                    <div className="space-y-1">
-                        <h2 className="text-2xl md:text-3xl font-bold">
-                            Featured Products
-                        </h2>
-                        <p className="text-sm md:text-base text-muted-foreground">
-                            Top picks for you — add to cart in one click.
-                        </p>
-                    </div>
+                <div className="m-12 text-center">
+                    <h2 className="text-3xl font-bold text-gray-900">
+                        Featured Products
+                    </h2>
                 </div>
 
-
                 {/* Loading / Error */}
-                <div className="mt-5">
+                <div className="mt-2">
                     {isLoading && <p>Loading products...</p>}
                     {isError && <p className="text-destructive">Failed to load products.</p>}
                 </div>
 
-                {/* Featured grid */}
                 {!isLoading && !isError && (
-                    <div className="grid gap-4 mt-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-6 mt-4 sm:grid-cols-2 lg:grid-cols-4">
                         {featuredProducts.map((p) => {
                             const outOfStock = Number(p?.countInStock ?? 0) <= 0
 
                             return (
-                                <Card key={p._id} className="w-full overflow-hidden">
-                                    <div className="w-full h-60 overflow-hidden bg-muted">
+                                <Card
+                                    key={p._id}
+                                    className="rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition"
+                                >
+                                    {/* Image */}
+                                    <div className="flex h-44 items-center justify-center bg-white p-4">
                                         {p?.image ? (
                                             <img
                                                 src={p.image}
                                                 alt={p.name}
-                                                className="w-full h-full object-cover"
+                                                className="h-full w-full object-contain"
                                                 loading="lazy"
                                             />
                                         ) : (
-                                            <div className="flex h-full items-center justify-center">
-                                                <span className="text-xs text-muted-foreground">No image</span>
-                                            </div>
+                                            <span className="text-xs text-muted-foreground">
+                                                No image
+                                            </span>
                                         )}
                                     </div>
 
-                                    <CardHeader>
-                                        <CardTitle className="text-base line-clamp-1">
-                                            {p?.name}
-                                        </CardTitle>
-                                        <CardDescription className="line-clamp-1">
-                                            {p?.category}
-                                        </CardDescription>
-                                    </CardHeader>
+                                    {/* Content */}
+                                    <div className="px-5 pb-5 pt-2 space-y-3">
+                                        <div className="space-y-1">
+                                            <div className="text-sm font-medium text-gray-900 line-clamp-1">
+                                                {p?.name}
+                                            </div>
 
-                                    <CardContent className="space-y-2">
-                                        <div className="flex items-center justify-between">
-                                            <div className="font-semibold">KES {p?.price}</div>
-
-                                            {p?.prescriptionRequired && (
-                                                <span className="text-xs px-2 py-1 rounded bg-secondary border">
-                                                    Prescription
-                                                </span>
-                                            )}
+                                            <div className="text-base font-bold text-gray-900">
+                                                KES {p?.price}
+                                            </div>
                                         </div>
 
                                         <Button
-                                            className="w-full"
+                                            className="w-full rounded-md bg-green-600 text-white hover:bg-green-700 disabled:bg-green-400"
                                             disabled={outOfStock}
                                             onClick={() => {
                                                 addItem({
@@ -272,10 +273,8 @@ export default function HomePage() {
                                         >
                                             {outOfStock ? "Out of stock" : "Add to Cart"}
                                         </Button>
-
-                                    </CardContent>
+                                    </div>
                                 </Card>
-
                             )
                         })}
                     </div>
@@ -325,22 +324,22 @@ export default function HomePage() {
 
                     {/* Grid */}
                     {!isLoading && !isError && filteredProducts.length > 0 && (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <div className="grid gap-6 mt-4 sm:grid-cols-2 lg:grid-cols-4">
                             {filteredProducts.map((p) => {
                                 const outOfStock = Number(p?.countInStock ?? 0) <= 0
 
                                 return (
                                     <Card
                                         key={p._id}
-                                        className="group overflow-hidden rounded-2xl border bg-background transition hover:shadow-md"
+                                        className="rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition"
                                     >
                                         {/* Image */}
-                                        <div className="relative h-56 w-full overflow-hidden bg-muted">
+                                        <div className="flex h-44 items-center justify-center bg-white p-4">
                                             {p?.image ? (
                                                 <img
                                                     src={p.image}
                                                     alt={p.name}
-                                                    className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                                                    className="h-full w-full object-contain"
                                                     loading="lazy"
                                                 />
                                             ) : (
@@ -377,17 +376,6 @@ export default function HomePage() {
                                         </CardHeader>
 
                                         <CardContent className="space-y-4">
-                                            {/* Description */}
-                                            {p?.description ? (
-                                                <p className="text-sm text-muted-foreground line-clamp-2">
-                                                    {p.description}
-                                                </p>
-                                            ) : (
-                                                <p className="text-sm text-muted-foreground">
-                                                    No description available.
-                                                </p>
-                                            )}
-
                                             {/* Price + Stock row */}
                                             <div className="flex items-center justify-between">
                                                 <div className="text-base font-semibold">
@@ -628,6 +616,42 @@ export default function HomePage() {
                             </div>
                         </CardContent>
                     </Card>
+                </div>
+            </section>
+
+
+            {/* FEATURES */}
+            <section className="max-w-6xl mx-auto px-4 py-10">
+                <div className="text-center max-w-2xl mx-auto">
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+                        Why customers choose us
+                    </h2>
+                    <p className="text-sm md:text-base text-muted-foreground mt-2">
+                        Built for trust, speed, and a smooth experience — from browsing to delivery.
+                    </p>
+                </div>
+
+                <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <Feature
+                        icon={<ShieldCheck className="h-5 w-5 text-violet-600 " />}
+                        title="Trusted products"
+                        desc="Verified medicines with clear product details and quality checks."
+                    />
+                    <Feature
+                        icon={<Stethoscope className="h-5 w-5 text-emerald-600" />}
+                        title="Prescription support"
+                        desc="Upload prescriptions for regulated medicines and get pharmacist review."
+                    />
+                    <Feature
+                        icon={<Truck className="h-5 w-5 text-sky-600" />}
+                        title="Fast delivery"
+                        desc="Order updates from approval to dispatch and delivery — clear and simple."
+                    />
+                    <Feature
+                        icon={<Clock className="h-5 w-5 text-emerald-600" />}
+                        title="Convenient shopping"
+                        desc="Search, add to cart, and checkout in minutes — optimized for mobile too."
+                    />
                 </div>
             </section>
 

@@ -7,6 +7,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Mail, Phone, MapPin } from "lucide-react"
 import { sendContactMessage } from "@/lib/api/contact.api"
 
+const extractErrorMessage = (err) =>
+    err?.response?.data?.message || err?.message || "Something went wrong"
+
 export default function ContactPage() {
     const [form, setForm] = useState({
         name: "",
@@ -56,7 +59,6 @@ export default function ContactPage() {
 
     return (
         <div className="max-w-6xl mx-auto p-4 grid gap-4 lg:grid-cols-[1fr_420px]">
-            {/* Form */}
             <Card className="border-border">
                 <CardHeader>
                     <CardTitle className="text-2xl">Contact Us</CardTitle>
@@ -81,11 +83,23 @@ export default function ContactPage() {
                     <form onSubmit={submit} className="space-y-3">
                         <div className="grid gap-3 sm:grid-cols-2">
                             <Input name="name" value={form.name} onChange={onChange} placeholder="Full name" />
-                            <Input name="email" value={form.email} onChange={onChange} placeholder="Email address" />
+                            <Input
+                                name="email"
+                                type="email"
+                                value={form.email}
+                                onChange={onChange}
+                                placeholder="Email address"
+                            />
                         </div>
 
                         <div className="grid gap-3 sm:grid-cols-2">
-                            <Input name="phone" value={form.phone} onChange={onChange} placeholder="Phone (optional)" />
+                            <Input
+                                name="phone"
+                                type="tel"
+                                value={form.phone}
+                                onChange={onChange}
+                                placeholder="Phone (optional)"
+                            />
                             <Input name="subject" value={form.subject} onChange={onChange} placeholder="Subject (optional)" />
                         </div>
 
@@ -104,7 +118,6 @@ export default function ContactPage() {
                 </CardContent>
             </Card>
 
-            {/* Info */}
             <Card className="border-border h-fit">
                 <CardHeader>
                     <CardTitle>Support Info</CardTitle>
@@ -114,7 +127,7 @@ export default function ContactPage() {
                         <Mail className="w-4 h-4 mt-0.5" />
                         <div>
                             <div className="font-medium">Email</div>
-                            <div className="text-muted-foreground">support@pharmacystore.com</div>
+                            <div className="text-muted-foreground">pharmacystore.team@gmail.com</div>
                         </div>
                     </div>
 
