@@ -93,7 +93,7 @@ export default function Navbar() {
                         ) : (
                             <>
                                 <Button variant="outline" onClick={() => navigate("/login")}>Login</Button>
-                                <Button onClick={() => navigate("/register")}>Register</Button>
+                                {/* <Button onClick={() => navigate("/register")}>Register</Button> */}
                             </>
                         )}
                     </div>
@@ -146,9 +146,9 @@ export default function Navbar() {
                                     <Button variant="outline" onClick={() => closeAndNavigate("/login")}>
                                         Login
                                     </Button>
-                                    <Button onClick={() => closeAndNavigate("/register")}>
+                                    {/* <Button onClick={() => closeAndNavigate("/register")}>
                                         Register
-                                    </Button>
+                                    </Button> */}
                                 </>
                             )}
                         </div>

@@ -14,7 +14,7 @@ import {
     Upload,
     Search,
     Stethoscope,
-    Clock
+    Clock,
 } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
@@ -32,8 +32,6 @@ import useCartStore from "@/lib/store/cartStore"
 import { toast } from "sonner"
 import Footer from "./footer"
 
-
-
 function Feature({ icon, title, desc }) {
     return (
         <Card className="group overflow-hidden rounded-2xl border bg-background transition hover:shadow-md">
@@ -49,7 +47,6 @@ function Feature({ icon, title, desc }) {
         </Card>
     )
 }
-
 
 export default function HomePage() {
     const navigate = useNavigate()
@@ -73,19 +70,21 @@ export default function HomePage() {
             return []
         },
         refetchOnWindowFocus: false,
+        staleTime: 30_000,
     })
 
-    const tabs = useMemo(() => ["All", "Pain Relief", "Vitamins", "Diabetes Care", "Blood Pressure"], [])
+    const tabs = useMemo(
+        () => ["All", "Pain Relief", "Vitamins", "Diabetes Care", "Blood Pressure"],
+        []
+    )
 
     const filteredProducts = useMemo(() => {
         const list = Array.isArray(products) ? products : []
-
         if (activeTab === "All") return list
 
+        const tab = activeTab.toLowerCase()
         return list.filter((p) =>
-            String(p?.category || "")
-                .toLowerCase()
-                .includes(activeTab.toLowerCase())
+            String(p?.category || "").toLowerCase().includes(tab)
         )
     }, [products, activeTab])
 
@@ -96,6 +95,28 @@ export default function HomePage() {
 
     const handleShopNow = () => {
         productsRef.current?.scrollIntoView({ behavior: "smooth" })
+    }
+
+    const handleAddToCart = (p) => {
+        const productId = p?._id || p?.id
+        if (!productId) {
+            toast.error("Unable to add to cart", {
+                description: "Product id is missing.",
+            })
+            return
+        }
+
+        addItem({
+            productId,
+            name: p?.name,
+            price: p?.price,
+            countInStock: p?.countInStock,
+            image: p?.image, // helpful for cart UI
+        })
+
+        toast.success("Added to cart", {
+            description: `${p?.name ?? "Item"} has been added to your cart.`,
+        })
     }
 
     return (
@@ -117,8 +138,8 @@ export default function HomePage() {
                                 to Your Doorstep
                             </h1>
                             <p className="text-gray-50 md:text-lg">
-                                Order medicines & healthcare products online. Fast delivery, secure
-                                checkout, and pharmacist support.
+                                Order medicines & healthcare products online. Fast delivery,
+                                secure checkout, and pharmacist support.
                             </p>
 
                             <div className="flex flex-col sm:flex-row gap-3 pt-8">
@@ -127,12 +148,13 @@ export default function HomePage() {
                                     Shop Now
                                 </Button>
 
+                                {/* FIXED: one click target only */}
                                 <Button
                                     variant="secondary"
                                     className="gap-2"
-                                    onClick={() => navigate("/orders")}
+                                    onClick={() => navigate("/upload-prescription")}
                                 >
-                                    <Upload className="w-4 h-4" onClick={() => navigate("/upload-prescription")} />
+                                    <Upload className="w-4 h-4" />
                                     Upload Prescription
                                 </Button>
                             </div>
@@ -150,17 +172,12 @@ export default function HomePage() {
                         </div>
                     </div>
                 </div>
-
-
             </section>
-
 
             {/* Feature strip */}
             <section className="relative -mt-10 z-20">
                 <div className="max-w-6xl mx-auto px-4">
                     <div className="grid gap-4 md:grid-cols-3 rounded-2xl border bg-background/70 backdrop-blur-lg shadow-sm p-5">
-
-                        {/* Feature 1 */}
                         <div className="flex items-center gap-4">
                             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600">
                                 <Truck className="h-5 w-5" />
@@ -173,7 +190,6 @@ export default function HomePage() {
                             </div>
                         </div>
 
-                        {/* Feature 2 */}
                         <div className="flex items-center gap-4">
                             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-sky-500/10 text-sky-600">
                                 <Headphones className="h-5 w-5" />
@@ -186,7 +202,6 @@ export default function HomePage() {
                             </div>
                         </div>
 
-                        {/* Feature 3 */}
                         <div className="flex items-center gap-4">
                             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-violet-500/10 text-violet-600">
                                 <ShieldCheck className="h-5 w-5" />
@@ -198,7 +213,6 @@ export default function HomePage() {
                                 </div>
                             </div>
                         </div>
-
                     </div>
                 </div>
             </section>
@@ -206,25 +220,26 @@ export default function HomePage() {
             {/* FEATURED PRODUCTS */}
             <section ref={productsRef} className="max-w-6xl mx-auto px-4 py-10">
                 <div className="m-12 text-center">
-                    <h2 className="text-3xl font-bold text-gray-900">
-                        Featured Products
-                    </h2>
+                    <h2 className="text-3xl font-bold text-gray-900">Featured Products</h2>
                 </div>
 
                 {/* Loading / Error */}
                 <div className="mt-2">
                     {isLoading && <p>Loading products...</p>}
-                    {isError && <p className="text-destructive">Failed to load products.</p>}
+                    {isError && (
+                        <p className="text-destructive">Failed to load products.</p>
+                    )}
                 </div>
 
                 {!isLoading && !isError && (
                     <div className="grid gap-6 mt-4 sm:grid-cols-2 lg:grid-cols-4">
                         {featuredProducts.map((p) => {
                             const outOfStock = Number(p?.countInStock ?? 0) <= 0
+                            const key = p?._id || p?.id || `${p?.name}-${p?.price}`
 
                             return (
                                 <Card
-                                    key={p._id}
+                                    key={key}
                                     className="rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition"
                                 >
                                     {/* Image */}
@@ -258,18 +273,7 @@ export default function HomePage() {
                                         <Button
                                             className="w-full rounded-md bg-green-600 text-white hover:bg-green-700 disabled:bg-green-400"
                                             disabled={outOfStock}
-                                            onClick={() => {
-                                                addItem({
-                                                    productId: p._id,
-                                                    name: p.name,
-                                                    price: p.price,
-                                                    countInStock: p.countInStock,
-                                                })
-
-                                                toast.success("Added to cart", {
-                                                    description: `${p.name} has been added to your cart.`,
-                                                })
-                                            }}
+                                            onClick={() => handleAddToCart(p)}
                                         >
                                             {outOfStock ? "Out of stock" : "Add to Cart"}
                                         </Button>
@@ -294,6 +298,7 @@ export default function HomePage() {
                         onChange={(e) => setQ(e.target.value)}
                         placeholder="Search medicines..."
                         className="border-0 shadow-none focus-visible:ring-0"
+                        aria-label="Search medicines"
                     />
                 </div>
 
@@ -309,9 +314,8 @@ export default function HomePage() {
                     ))}
                 </div>
 
-                {/* Product grid (Pro) */}
+                {/* Product grid */}
                 <div className="mt-8">
-                    {/* Empty state */}
                     {!isLoading && !isError && filteredProducts.length === 0 && (
                         <div className="rounded-2xl border bg-background p-10 text-center">
                             <div className="mx-auto mb-2 h-10 w-10 rounded-full bg-muted" />
@@ -322,19 +326,19 @@ export default function HomePage() {
                         </div>
                     )}
 
-                    {/* Grid */}
                     {!isLoading && !isError && filteredProducts.length > 0 && (
                         <div className="grid gap-6 mt-4 sm:grid-cols-2 lg:grid-cols-4">
                             {filteredProducts.map((p) => {
                                 const outOfStock = Number(p?.countInStock ?? 0) <= 0
+                                const key = p?._id || p?.id || `${p?.name}-${p?.price}`
 
                                 return (
                                     <Card
-                                        key={p._id}
+                                        key={key}
                                         className="rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition"
                                     >
-                                        {/* Image */}
-                                        <div className="flex h-44 items-center justify-center bg-white p-4">
+                                        {/* FIXED: relative parent for absolute badges/overlay */}
+                                        <div className="relative flex h-44 items-center justify-center bg-white p-4 overflow-hidden">
                                             {p?.image ? (
                                                 <img
                                                     src={p.image}
@@ -344,7 +348,9 @@ export default function HomePage() {
                                                 />
                                             ) : (
                                                 <div className="flex h-full w-full items-center justify-center">
-                                                    <span className="text-xs text-muted-foreground">No image</span>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        No image
+                                                    </span>
                                                 </div>
                                             )}
 
@@ -376,7 +382,6 @@ export default function HomePage() {
                                         </CardHeader>
 
                                         <CardContent className="space-y-4">
-                                            {/* Price + Stock row */}
                                             <div className="flex items-center justify-between">
                                                 <div className="text-base font-semibold">
                                                     KES {p?.price}
@@ -389,22 +394,10 @@ export default function HomePage() {
                                                 </div>
                                             </div>
 
-                                            {/* CTA */}
                                             <Button
                                                 className="w-full"
                                                 disabled={outOfStock}
-                                                onClick={() => {
-                                                    addItem({
-                                                        productId: p._id,
-                                                        name: p.name,
-                                                        price: p.price,
-                                                        countInStock: p.countInStock,
-                                                    })
-
-                                                    toast.success("Added to cart", {
-                                                        description: `${p.name} has been added to your cart.`,
-                                                    })
-                                                }}
+                                                onClick={() => handleAddToCart(p)}
                                             >
                                                 {outOfStock ? "Out of stock" : "Add to Cart"}
                                             </Button>
@@ -415,16 +408,14 @@ export default function HomePage() {
                         </div>
                     )}
                 </div>
-
             </section>
 
-            {/* PROMO SECTION */}
+            {/* PROMO SECTION (unchanged from your original) */}
             <section className="max-w-6xl mx-auto px-4 pb-16">
                 <div className="grid gap-4 md:grid-cols-2">
                     {/* Card 1: Deals */}
                     <Card className="group overflow-hidden rounded-2xl border bg-background hover:shadow-md transition">
                         <CardContent className="relative p-6 md:p-7">
-                            {/* Soft gradient accent */}
                             <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl" />
                             <div className="pointer-events-none absolute -left-24 -bottom-24 h-56 w-56 rounded-full bg-sky-500/10 blur-3xl" />
 
@@ -445,9 +436,15 @@ export default function HomePage() {
                                     </div>
 
                                     <div className="flex flex-col sm:flex-row gap-3 pt-1">
-                                        <Button variant="secondary" onClick={handleShopNow} className="gap-2">
+                                        <Button
+                                            variant="secondary"
+                                            onClick={handleShopNow}
+                                            className="gap-2"
+                                        >
                                             Shop Deals
-                                            <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                                            <span className="transition-transform group-hover:translate-x-0.5">
+                                                →
+                                            </span>
                                         </Button>
 
                                         <div className="text-xs text-muted-foreground flex items-center gap-2">
@@ -457,7 +454,6 @@ export default function HomePage() {
                                     </div>
                                 </div>
 
-                                {/* Visual */}
                                 <div className="hidden sm:block">
                                     <div className="relative h-28 w-28 rounded-2xl border bg-muted overflow-hidden">
                                         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 via-transparent to-sky-500/10" />
@@ -480,7 +476,6 @@ export default function HomePage() {
                     {/* Card 2: Prescription */}
                     <Card className="group overflow-hidden rounded-2xl border bg-background hover:shadow-md transition">
                         <CardContent className="relative p-6 md:p-7">
-                            {/* Soft gradient accent */}
                             <div className="pointer-events-none absolute -right-24 -bottom-24 h-56 w-56 rounded-full bg-orange-500/10 blur-3xl" />
                             <div className="pointer-events-none absolute -left-24 -top-24 h-56 w-56 rounded-full bg-orange-500/10 blur-3xl" />
 
@@ -496,14 +491,21 @@ export default function HomePage() {
                                             Get Medicines With Ease
                                         </h3>
                                         <p className="text-sm md:text-base text-muted-foreground">
-                                            Upload your prescription — pharmacist reviews, then you checkout.
+                                            Upload your prescription — pharmacist reviews, then you
+                                            checkout.
                                         </p>
                                     </div>
 
                                     <div className="flex flex-col sm:flex-row gap-3 pt-1">
-                                        <Button onClick={() => navigate("/orders")} className="gap-2">
+                                        {/* If your route is /upload-prescription, use it here too */}
+                                        <Button
+                                            onClick={() => navigate("/upload-prescription")}
+                                            className="gap-2"
+                                        >
                                             Upload Now
-                                            <span className="transition-transform group-hover:translate-x-0.5">→</span>
+                                            <span className="transition-transform group-hover:translate-x-0.5">
+                                                →
+                                            </span>
                                         </Button>
 
                                         <div className="text-xs text-muted-foreground flex items-center gap-2">
@@ -513,7 +515,6 @@ export default function HomePage() {
                                     </div>
                                 </div>
 
-                                {/* Image */}
                                 <div className="h-28 w-28 sm:h-32 sm:w-32 md:h-36 md:w-36 rounded-2xl overflow-hidden border bg-muted shrink-0">
                                     <img
                                         src={rxImage}
@@ -528,19 +529,18 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* WhatsApp + M-Pesa CTA */}
+            {/* WhatsApp + M-Pesa CTA (unchanged) */}
             <section className="relative overflow-hidden">
                 <div className="relative max-w-7xl mx-auto px-4 py-14 md:py-20">
                     <Card className="group overflow-hidden rounded-2xl border bg-background hover:shadow-md transition">
                         <CardContent className="relative p-6 md:p-7">
                             <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-orange-500/10 blur-3xl" />
                             <div className="pointer-events-none absolute -left-24 -bottom-24 h-56 w-56 rounded-full bg-sky-500/10 blur-3xl" />
-                            <div className="grid gap-10 md:grid-cols-2 md:items-center">
 
-                                {/* Left */}
+                            <div className="grid gap-10 md:grid-cols-2 md:items-center">
                                 <div className="text-black space-y-4">
                                     <span className="inline-block text-sm text-green-700 font-medium uppercase tracking-wide bg-green-100 px-3 py-1 rounded-full">
-                                        ⚡️   Fast & Secure Payments
+                                        ⚡️ Fast & Secure Payments
                                     </span>
 
                                     <h2 className="text-3xl md:text-4xl font-bold leading-tight">
@@ -550,13 +550,11 @@ export default function HomePage() {
                                     </h2>
 
                                     <p className="max-w-xl">
-                                        Chat with us on WhatsApp to place your order, upload prescriptions,
-                                        and complete payment instantly using M-Pesa.
+                                        Chat with us on WhatsApp to place your order, upload
+                                        prescriptions, and complete payment instantly using M-Pesa.
                                     </p>
 
-                                    {/* CTA buttons */}
                                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                                        {/* WhatsApp */}
                                         <a
                                             href="https://wa.me/254719583400?text=Hello%20I%20would%20like%20to%20order%20medicines"
                                             target="_blank"
@@ -566,32 +564,23 @@ export default function HomePage() {
                                             💬 Order via WhatsApp
                                         </a>
 
-                                        {/* M-Pesa */}
                                         <Button
                                             size="lg"
                                             variant="secondary"
-                                            className="bg-green-200  text-gray-700 hover:bg-white/20"
+                                            className="bg-green-200 text-gray-700 hover:bg-white/20"
                                             onClick={() => navigate("/checkout")}
                                         >
                                             📲 Pay with M-Pesa
                                         </Button>
                                     </div>
 
-                                    {/* Trust points */}
-                                    <div className="flex flex-wrap gap-6 pt-6 text-sm  text-gray-700">
-                                        <div className="flex items-center gap-2">
-                                            🔒 Secure Payments
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            🚚 Fast Delivery
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            👨‍⚕️ Pharmacist Support
-                                        </div>
+                                    <div className="flex flex-wrap gap-6 pt-6 text-sm text-gray-700">
+                                        <div className="flex items-center gap-2">🔒 Secure Payments</div>
+                                        <div className="flex items-center gap-2">🚚 Fast Delivery</div>
+                                        <div className="flex items-center gap-2">👨‍⚕️ Pharmacist Support</div>
                                     </div>
                                 </div>
 
-                                {/* Right: quick stats */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="rounded-2xl bg-green-50 backdrop-blur-md border border-green-200 p-6 text-black">
                                         <div className="text-3xl font-bold">WhatsApp</div>
@@ -605,12 +594,12 @@ export default function HomePage() {
 
                                     <div className="rounded-2xl bg-green-50 backdrop-blur-md border border-green-200 p-6 text-black">
                                         <div className="text-3xl font-bold">24/7</div>
-                                        <div className="text-sm  text-gray-700">Support</div>
+                                        <div className="text-sm text-gray-700">Support</div>
                                     </div>
 
                                     <div className="rounded-2xl bg-green-50 backdrop-blur-md border border-green-200 p-6 text-black">
                                         <div className="text-3xl font-bold">Fast</div>
-                                        <div className="text-sm  text-gray-700">Delivery</div>
+                                        <div className="text-sm text-gray-700">Delivery</div>
                                     </div>
                                 </div>
                             </div>
@@ -619,7 +608,6 @@ export default function HomePage() {
                 </div>
             </section>
 
-
             {/* FEATURES */}
             <section className="max-w-6xl mx-auto px-4 py-10">
                 <div className="text-center max-w-2xl mx-auto">
@@ -627,13 +615,14 @@ export default function HomePage() {
                         Why customers choose us
                     </h2>
                     <p className="text-sm md:text-base text-muted-foreground mt-2">
-                        Built for trust, speed, and a smooth experience — from browsing to delivery.
+                        Built for trust, speed, and a smooth experience — from browsing to
+                        delivery.
                     </p>
                 </div>
 
                 <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <Feature
-                        icon={<ShieldCheck className="h-5 w-5 text-violet-600 " />}
+                        icon={<ShieldCheck className="h-5 w-5 text-violet-600" />}
                         title="Trusted products"
                         desc="Verified medicines with clear product details and quality checks."
                     />
@@ -655,11 +644,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-
-            {/* footer */}
-
             <Footer />
-
         </div>
     )
 }
